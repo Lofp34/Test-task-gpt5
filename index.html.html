@@ -1,0 +1,1419 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rituels — iOS 26 Glass</title>
+  <meta name="theme-color" content="#0b0f14" />
+  <style>
+    :root{
+      --bg0:#070a0f;
+      --bg1:#0b1220;
+      --txt: rgba(255,255,255,.92);
+      --muted: rgba(255,255,255,.68);
+      --faint: rgba(255,255,255,.42);
+      --glass: rgba(255,255,255,.10);
+      --glass2: rgba(255,255,255,.14);
+      --stroke: rgba(255,255,255,.18);
+      --shadow: 0 18px 60px rgba(0,0,0,.45);
+      --r16: 16px;
+      --r20: 20px;
+      --r28: 28px;
+      --blur: 22px;
+      --safeBottom: env(safe-area-inset-bottom, 0px);
+      --safeTop: env(safe-area-inset-top, 0px);
+      --accent: #6ae4ff;
+      --good: #32d74b;
+      --warn: #ff9f0a;
+      --bad:  #ff453a;
+    }
+
+    /* Base */
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+      color: var(--txt);
+      background:
+        radial-gradient(1200px 700px at 20% 0%, rgba(106,228,255,.16), transparent 55%),
+        radial-gradient(900px 600px at 90% 10%, rgba(255, 64, 129, .14), transparent 55%),
+        radial-gradient(1000px 700px at 60% 110%, rgba(50,215,75,.12), transparent 55%),
+        linear-gradient(180deg, var(--bg0), var(--bg1));
+      overflow:hidden;
+    }
+
+    /* Accessibility toggles */
+    body.reduceTransparency .glass{
+      background: rgba(20,24,34,.78) !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+      border-color: rgba(255,255,255,.14) !important;
+    }
+    body.reduceMotion *{
+      scroll-behavior:auto !important;
+      transition:none !important;
+      animation:none !important;
+    }
+
+    /* App layout */
+    .app{
+      height:100%;
+      display:flex;
+      flex-direction:column;
+    }
+
+    .topbar{
+      padding: calc(14px + var(--safeTop)) 16px 10px 16px;
+      display:flex;
+      align-items:flex-end;
+      gap:12px;
+    }
+    .titleBlock{flex:1}
+    .title{
+      margin:0;
+      font-size:28px;
+      line-height:1.05;
+      letter-spacing:-.02em;
+    }
+    .subtitle{
+      margin:6px 0 0 0;
+      color: var(--muted);
+      font-size:13px;
+      letter-spacing:.01em;
+    }
+
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:10px 12px;
+      border-radius:999px;
+      background: rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.12);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 10px 30px rgba(0,0,0,.25);
+      color: var(--txt);
+      font-size:13px;
+      user-select:none;
+      cursor:pointer;
+      transition: transform .15s ease, background .15s ease;
+    }
+    .pill:active{transform: scale(.98)}
+    .pill .dot{
+      width:8px;height:8px;border-radius:99px;background: var(--accent);
+      box-shadow:0 0 0 4px rgba(106,228,255,.16);
+    }
+
+    .content{
+      flex:1;
+      min-height:0;
+      overflow:auto;
+      padding: 6px 14px calc(90px + var(--safeBottom)) 14px;
+      scroll-behavior:smooth;
+    }
+
+    /* Glass card */
+    .glass{
+      background: linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,.08));
+      border: 1px solid var(--stroke);
+      border-radius: var(--r28);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(var(--blur));
+      -webkit-backdrop-filter: blur(var(--blur));
+    }
+    .card{ padding: 14px; }
+    .cardHeader{
+      display:flex;align-items:center;justify-content:space-between;gap:12px;
+      padding: 2px 2px 10px 2px;
+    }
+    .cardTitle{
+      font-size:14px;
+      color: var(--muted);
+      letter-spacing:.02em;
+    }
+    .cardRight{
+      color: var(--faint);
+      font-size:12px;
+    }
+
+    .section{ margin: 10px 0 14px 0; }
+    .grid2{ display:grid; grid-template-columns: 1fr; gap:12px; }
+    @media (min-width: 860px){
+      .grid2{ grid-template-columns: 1.2fr .8fr; }
+    }
+
+    /* Task list */
+    .taskList{display:flex;flex-direction:column;gap:10px}
+    .task{
+      display:flex;gap:12px;align-items:center;
+      padding: 12px;
+      border-radius: 20px;
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.12);
+      transition: transform .15s ease, background .15s ease;
+    }
+    .task:active{transform: scale(.99)}
+    .taskLeft{display:flex; align-items:center; gap:12px; flex:1; min-width:0;}
+    .taskName{
+      font-size:15px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .taskMeta{
+      margin-top:3px;
+      font-size:12px;
+      color: var(--faint);
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    /* Checkbox */
+    .chk{
+      width:26px;height:26px;border-radius:10px;
+      border: 1px solid rgba(255,255,255,.22);
+      background: rgba(0,0,0,.15);
+      display:grid;place-items:center;
+      flex:0 0 auto;
+      cursor:pointer;
+      transition: transform .15s ease, background .15s ease, border-color .15s ease;
+      user-select:none;
+    }
+    .chk.on{
+      background: rgba(50,215,75,.22);
+      border-color: rgba(50,215,75,.55);
+    }
+    .chk svg{opacity:.0; transform: translateY(1px) scale(.85); transition: opacity .15s ease, transform .15s ease;}
+    .chk.on svg{opacity:1; transform: translateY(0) scale(1);}
+
+    /* Counter */
+    .counter{
+      display:flex; align-items:center; gap:8px;
+      flex:0 0 auto;
+    }
+    .btn{
+      width:34px;height:34px;border-radius:12px;
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(255,255,255,.08);
+      color: var(--txt);
+      display:grid;place-items:center;
+      cursor:pointer;
+      user-select:none;
+      transition: transform .15s ease, background .15s ease;
+    }
+    .btn:active{transform: scale(.97)}
+    .countBadge{
+      min-width:58px;
+      text-align:center;
+      padding:8px 10px;
+      border-radius: 999px;
+      border:1px solid rgba(255,255,255,.16);
+      background: rgba(0,0,0,.18);
+      font-size:13px;
+      color: var(--txt);
+    }
+    .countBadge.ok{ border-color: rgba(50,215,75,.45); background: rgba(50,215,75,.14);}
+
+    /* Tabs (Liquid Glass-ish) */
+    .tabs{
+      position: sticky;
+      bottom: 0;
+      padding: 10px 10px calc(10px + var(--safeBottom)) 10px;
+      margin-top:-12px;
+    }
+    .tabbar{
+      height: 64px;
+      display:flex;
+      gap: 8px;
+      padding: 10px;
+      border-radius: 26px;
+    }
+    .tab{
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:4px;
+      border-radius: 18px;
+      cursor:pointer;
+      user-select:none;
+      color: rgba(255,255,255,.70);
+      transition: background .15s ease, transform .15s ease, color .15s ease;
+    }
+    .tab:active{transform: scale(.99)}
+    .tab.active{
+      background: rgba(255,255,255,.10);
+      color: rgba(255,255,255,.92);
+      border:1px solid rgba(255,255,255,.14);
+    }
+    .tab svg{opacity:.95}
+    .tabLabel{font-size:11px; letter-spacing:.02em}
+
+    /* Compact tabbar on scroll (inspired by iOS 26 behavior) */
+    .tabbar.compact{ height: 50px; padding: 8px; border-radius: 24px; }
+    .tabbar.compact .tabLabel{ display:none; }
+
+    /* Stats */
+    .kpis{
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap:10px;
+    }
+    .kpi{
+      padding: 12px;
+      border-radius: 20px;
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.12);
+    }
+    .kpiVal{
+      font-size:22px;
+      letter-spacing:-.02em;
+    }
+    .kpiLbl{
+      margin-top:6px;
+      font-size:12px;
+      color: var(--muted);
+    }
+    canvas{
+      width:100%;
+      height:160px;
+      display:block;
+      border-radius: 18px;
+      background: rgba(0,0,0,.14);
+      border:1px solid rgba(255,255,255,.10);
+    }
+
+    /* Modal */
+    .modalBackdrop{
+      position:fixed; inset:0;
+      background: rgba(0,0,0,.55);
+      display:none;
+      align-items:flex-end;
+      justify-content:center;
+      padding: 14px;
+      z-index: 50;
+    }
+    .modalBackdrop.show{ display:flex; }
+    .sheet{
+      width: min(780px, 100%);
+      border-radius: 28px;
+      overflow:hidden;
+    }
+    .sheetHeader{
+      padding: 12px 14px;
+      display:flex;align-items:center;justify-content:space-between;gap:12px;
+      background: rgba(255,255,255,.10);
+      border-bottom: 1px solid rgba(255,255,255,.14);
+    }
+    .sheetHeader h3{
+      margin:0;font-size:16px; letter-spacing:-.01em;
+    }
+    .sheetBody{ padding: 14px; }
+    .row{ display:grid; grid-template-columns: 1fr; gap:10px; margin-bottom:10px; }
+    @media (min-width: 640px){ .row{ grid-template-columns: 1fr 1fr; } }
+    label{ font-size:12px; color: var(--muted); display:block; margin: 0 0 6px 2px; }
+    input, select, textarea{
+      width:100%;
+      padding: 12px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.18);
+      color: var(--txt);
+      outline:none;
+    }
+    textarea{ min-height: 84px; resize: vertical; }
+    .inline{
+      display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+    }
+    .chip{
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.08);
+      color: var(--txt);
+      font-size:12px;
+      cursor:pointer;
+      user-select:none;
+    }
+    .chip.on{
+      border-color: rgba(106,228,255,.45);
+      background: rgba(106,228,255,.14);
+    }
+    .actions{
+      display:flex; gap:10px; justify-content:flex-end; margin-top:12px; flex-wrap:wrap;
+    }
+    .primary{
+      background: rgba(106,228,255,.20);
+      border-color: rgba(106,228,255,.40);
+    }
+    .danger{
+      background: rgba(255,69,58,.18);
+      border-color: rgba(255,69,58,.35);
+    }
+    .hint{
+      color: var(--faint);
+      font-size: 12px;
+      line-height:1.35;
+      margin-top:8px;
+    }
+
+    /* Utility */
+    .hidden{ display:none !important; }
+    .spacer{ height: 10px; }
+    .divider{ height:1px; background: rgba(255,255,255,.10); margin: 12px 0; border-radius: 99px;}
+    .right{ text-align:right; }
+    .small{ font-size:12px; color: var(--muted); }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <div class="topbar">
+      <div class="titleBlock">
+        <h1 class="title" id="screenTitle">Aujourd’hui</h1>
+        <p class="subtitle" id="screenSubtitle">Coche, incrémente, et garde le cap — sans friction.</p>
+      </div>
+      <div class="pill" id="quickAddBtn" title="Ajouter une tâche">
+        <span class="dot"></span>
+        <span>Nouvelle tâche</span>
+      </div>
+    </div>
+
+    <div class="content" id="content">
+      <!-- TODAY -->
+      <div id="viewToday" class="view">
+        <div class="section grid2">
+          <div class="glass card">
+            <div class="cardHeader">
+              <div class="cardTitle">Checklist du jour</div>
+              <div class="cardRight" id="todayMeta">—</div>
+            </div>
+            <div class="taskList" id="todayTasks"></div>
+            <div class="spacer"></div>
+            <div class="small" id="todayTip"></div>
+          </div>
+
+          <div class="glass card">
+            <div class="cardHeader">
+              <div class="cardTitle">Focus</div>
+              <div class="cardRight">streaks & tendances</div>
+            </div>
+            <div class="kpis" style="margin-top:4px">
+              <div class="kpi">
+                <div class="kpiVal" id="kpiToday">—</div>
+                <div class="kpiLbl">Aujourd’hui</div>
+              </div>
+              <div class="kpi">
+                <div class="kpiVal" id="kpi7d">—</div>
+                <div class="kpiLbl">7 jours</div>
+              </div>
+              <div class="kpi">
+                <div class="kpiVal" id="kpi30d">—</div>
+                <div class="kpiLbl">30 jours</div>
+              </div>
+            </div>
+            <div class="divider"></div>
+            <div class="small">Astuce : si la lisibilité te gêne, active “Réduire la transparence” dans Réglages.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STATS -->
+      <div id="viewStats" class="view hidden">
+        <div class="section">
+          <div class="glass card">
+            <div class="cardHeader">
+              <div class="cardTitle">Progression — 14 derniers jours</div>
+              <div class="cardRight" id="statsMeta">—</div>
+            </div>
+            <canvas id="chart14" width="800" height="260"></canvas>
+            <div class="hint">Le score = % de tâches “dues” complétées (checkbox OK / compteur ≥ objectif).</div>
+          </div>
+        </div>
+
+        <div class="section grid2">
+          <div class="glass card">
+            <div class="cardHeader">
+              <div class="cardTitle">Top habitudes</div>
+              <div class="cardRight">streak</div>
+            </div>
+            <div id="topHabits" class="taskList"></div>
+          </div>
+
+          <div class="glass card">
+            <div class="cardHeader">
+              <div class="cardTitle">Résumé</div>
+              <div class="cardRight">mois / semaine</div>
+            </div>
+            <div id="summaryBox" class="small"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TASKS -->
+      <div id="viewTasks" class="view hidden">
+        <div class="section">
+          <div class="glass card">
+            <div class="cardHeader">
+              <div class="cardTitle">Tâches (structure)</div>
+              <div class="cardRight"><span class="mono" id="taskCount">—</span></div>
+            </div>
+            <div class="small">Tu peux créer des tâches quotidiennes ou hebdo (samedi/dimanche, etc.).</div>
+            <div class="divider"></div>
+            <div class="row" style="margin-bottom:0">
+              <div>
+                <label>Filtrer par responsable</label>
+                <select id="ownerFilter"></select>
+              </div>
+              <div>
+                <label>Recherche</label>
+                <input id="searchTask" placeholder="ex: respiration, sport, rangement…" />
+              </div>
+            </div>
+            <div class="divider"></div>
+            <div class="taskList" id="allTasks"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div id="viewSettings" class="view hidden">
+        <div class="section">
+          <div class="glass card">
+            <div class="cardHeader">
+              <div class="cardTitle">Réglages</div>
+              <div class="cardRight">accessibilité & données</div>
+            </div>
+
+            <div class="task" style="justify-content:space-between">
+              <div class="taskLeft">
+                <div>
+                  <div class="taskName">Réduire la transparence</div>
+                  <div class="taskMeta">Améliore la lisibilité si le “glass” te fatigue.</div>
+                </div>
+              </div>
+              <div class="btn" id="toggleTransparency" title="Toggle">✓</div>
+            </div>
+
+            <div class="task" style="justify-content:space-between">
+              <div class="taskLeft">
+                <div>
+                  <div class="taskName">Réduire les animations</div>
+                  <div class="taskMeta">Moins de mouvements / transitions.</div>
+                </div>
+              </div>
+              <div class="btn" id="toggleMotion" title="Toggle">✓</div>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="row">
+              <div>
+                <label>Exporter les données</label>
+                <button class="btn primary" id="exportBtn" style="width:100%;height:auto;padding:12px;border-radius:14px">Télécharger JSON</button>
+                <div class="hint">Pratique pour sauvegarder ou transférer sur un autre appareil.</div>
+              </div>
+              <div>
+                <label>Importer des données</label>
+                <input type="file" id="importFile" accept="application/json" />
+                <div class="hint">Remplace les données actuelles par le fichier importé.</div>
+              </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="row">
+              <div>
+                <label>Reset (attention)</label>
+                <button class="btn danger" id="resetBtn" style="width:100%;height:auto;padding:12px;border-radius:14px">Tout effacer</button>
+                <div class="hint">Supprime tâches + historique (localStorage).</div>
+              </div>
+              <div>
+                <label>À propos</label>
+                <div class="small">
+                  Version <span class="mono">v1</span> — offline / localStorage.<br/>
+                  Pour du “partage famille” temps réel : ajouter un backend (Supabase/Firebase).
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <div class="glass tabbar" id="tabbar">
+          <div class="tab active" data-tab="today">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M7 12.5l3 3 7-8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke="currentColor" stroke-width="2" opacity=".5"/>
+            </svg>
+            <div class="tabLabel">Aujourd’hui</div>
+          </div>
+          <div class="tab" data-tab="stats">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M5 19V10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M12 19V5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M19 19v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <div class="tabLabel">Stats</div>
+          </div>
+          <div class="tab" data-tab="tasks">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M8 6h13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M8 12h13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M8 18h13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M3.5 6.5l1 1 2-2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M3.5 12.5l1 1 2-2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M3.5 18.5l1 1 2-2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <div class="tabLabel">Tâches</div>
+          </div>
+          <div class="tab" data-tab="settings">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" stroke="currentColor" stroke-width="2"/>
+              <path d="M19.4 15a7.97 7.97 0 0 0 .1-2l2-1.2-2-3.4-2.3.6a8.2 8.2 0 0 0-1.7-1l-.3-2.4H9.8l-.3 2.4a8.2 8.2 0 0 0-1.7 1L5.5 8.4l-2 3.4L5.5 13a8 8 0 0 0 .1 2l-2 1.2 2 3.4 2.3-.6c.5.4 1.1.7 1.7 1l.3 2.4h4.4l.3-2.4c.6-.3 1.2-.6 1.7-1l2.3.6 2-3.4-2-1.2Z" stroke="currentColor" stroke-width="2" opacity=".55"/>
+            </svg>
+            <div class="tabLabel">Réglages</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Modal: Add/Edit task -->
+  <div class="modalBackdrop" id="modal">
+    <div class="glass sheet">
+      <div class="sheetHeader">
+        <h3 id="modalTitle">Nouvelle tâche</h3>
+        <div class="inline">
+          <div class="btn danger" id="deleteBtn" title="Supprimer" style="display:none">🗑️</div>
+          <div class="btn" id="closeModal" title="Fermer">✕</div>
+        </div>
+      </div>
+      <div class="sheetBody">
+        <div class="row">
+          <div>
+            <label>Nom</label>
+            <input id="tName" placeholder="ex: Méditation 10 min" />
+          </div>
+          <div>
+            <label>Responsable (optionnel)</label>
+            <input id="tOwner" placeholder="ex: Laurent / France / Enfant…" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>Type</label>
+            <select id="tType">
+              <option value="check">Checkbox (1 fois par jour)</option>
+              <option value="counter">Compteur (objectif / jour)</option>
+            </select>
+          </div>
+          <div id="targetWrap">
+            <label>Objectif (si compteur)</label>
+            <input id="tTarget" type="number" min="1" step="1" value="6" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>Récurrence</label>
+            <select id="tSchedule">
+              <option value="daily">Quotidienne</option>
+              <option value="weekly">Hebdomadaire (jours précis)</option>
+            </select>
+          </div>
+          <div>
+            <label>Catégorie (optionnel)</label>
+            <input id="tCategory" placeholder="Santé / Chien / Maison / Sport…" />
+          </div>
+        </div>
+
+        <div id="weekdaysWrap">
+          <label>Jours (si hebdo)</label>
+          <div class="inline" id="weekdayChips"></div>
+        </div>
+
+        <div class="row" style="grid-template-columns:1fr">
+          <div>
+            <label>Note (optionnel)</label>
+            <textarea id="tNote" placeholder="ex: Respiration = 5 min / 2h (objectif 6)"></textarea>
+            <div class="hint">Conseil : évite trop de “glass” sans contraste. Ici on garde des bordures + option “réduire transparence”.</div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <div class="btn" id="cancelBtn" style="width:auto;padding:12px 14px;height:auto;border-radius:14px">Annuler</div>
+          <div class="btn primary" id="saveBtn" style="width:auto;padding:12px 14px;height:auto;border-radius:14px">Enregistrer</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const KEY = "rituels_glass_v1";
+
+  const $ = (sel) => document.querySelector(sel);
+  const $$ = (sel) => [...document.querySelectorAll(sel)];
+
+  const VIEWS = {
+    today: $("#viewToday"),
+    stats: $("#viewStats"),
+    tasks: $("#viewTasks"),
+    settings: $("#viewSettings")
+  };
+
+  const screenTitle = $("#screenTitle");
+  const screenSubtitle = $("#screenSubtitle");
+  const content = $("#content");
+  const tabbar = $("#tabbar");
+
+  const todayTasksEl = $("#todayTasks");
+  const allTasksEl = $("#allTasks");
+
+  const kpiToday = $("#kpiToday");
+  const kpi7d = $("#kpi7d");
+  const kpi30d = $("#kpi30d");
+
+  const todayMeta = $("#todayMeta");
+  const todayTip = $("#todayTip");
+
+  const statsMeta = $("#statsMeta");
+  const chart14 = $("#chart14");
+  const topHabits = $("#topHabits");
+  const summaryBox = $("#summaryBox");
+
+  const quickAddBtn = $("#quickAddBtn");
+
+  const ownerFilter = $("#ownerFilter");
+  const searchTask = $("#searchTask");
+  const taskCount = $("#taskCount");
+
+  // Modal
+  const modal = $("#modal");
+  const modalTitle = $("#modalTitle");
+  const closeModal = $("#closeModal");
+  const cancelBtn = $("#cancelBtn");
+  const saveBtn = $("#saveBtn");
+  const deleteBtn = $("#deleteBtn");
+
+  const tName = $("#tName");
+  const tOwner = $("#tOwner");
+  const tType = $("#tType");
+  const tTarget = $("#tTarget");
+  const tSchedule = $("#tSchedule");
+  const tCategory = $("#tCategory");
+  const tNote = $("#tNote");
+  const targetWrap = $("#targetWrap");
+  const weekdaysWrap = $("#weekdaysWrap");
+  const weekdayChips = $("#weekdayChips");
+
+  // Settings
+  const toggleTransparency = $("#toggleTransparency");
+  const toggleMotion = $("#toggleMotion");
+  const exportBtn = $("#exportBtn");
+  const importFile = $("#importFile");
+  const resetBtn = $("#resetBtn");
+
+  const WEEKDAYS = [
+    {i:0, s:"Dim"}, {i:1, s:"Lun"}, {i:2, s:"Mar"},
+    {i:3, s:"Mer"}, {i:4, s:"Jeu"}, {i:5, s:"Ven"}, {i:6, s:"Sam"}
+  ];
+
+  function uid(){
+    return Math.random().toString(16).slice(2) + Date.now().toString(16);
+  }
+  function pad2(n){ return String(n).padStart(2,"0"); }
+  function dateKey(d=new Date()){
+    return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+  }
+  function startOfDay(d=new Date()){
+    const x = new Date(d);
+    x.setHours(0,0,0,0);
+    return x;
+  }
+  function addDays(d, n){
+    const x = new Date(d);
+    x.setDate(x.getDate()+n);
+    return x;
+  }
+  function fmtLong(d=new Date()){
+    return d.toLocaleDateString("fr-FR", {weekday:"long", day:"2-digit", month:"long"});
+  }
+  function isoWeekNumber(d){
+    // ISO week number
+    const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    const dayNum = date.getUTCDay() || 7;
+    date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(date.getUTCFullYear(),0,1));
+    return Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+  }
+
+  function load(){
+    const raw = localStorage.getItem(KEY);
+    if(raw){
+      try { return JSON.parse(raw); } catch(e){}
+    }
+    return null;
+  }
+  function save(data){
+    localStorage.setItem(KEY, JSON.stringify(data));
+  }
+
+  function defaultData(){
+    const now = new Date().toISOString();
+    return {
+      version: 1,
+      prefs: { reduceTransparency:false, reduceMotion:false, lastTab:"today" },
+      tasks: [
+        {id:uid(), name:"Méditation 10 min", type:"check", target:1, schedule:"daily", weekdays:[0,1,2,3,4,5,6], owner:"Laurent", category:"Santé", note:"10 minutes minimum.", createdAt:now},
+        {id:uid(), name:"Gainage 1 min", type:"check", target:1, schedule:"daily", weekdays:[0,1,2,3,4,5,6], owner:"Laurent", category:"Santé", note:"Même 60 secondes : on garde la chaîne.", createdAt:now},
+        {id:uid(), name:"Médicament chien — matin", type:"check", target:1, schedule:"daily", weekdays:[0,1,2,3,4,5,6], owner:"Laurent", category:"Chien", note:"", createdAt:now},
+        {id:uid(), name:"Médicament chien — soir", type:"check", target:1, schedule:"daily", weekdays:[0,1,2,3,4,5,6], owner:"Laurent", category:"Chien", note:"", createdAt:now},
+        {id:uid(), name:"Respiration 5 min (toutes les ~2h)", type:"counter", target:6, schedule:"daily", weekdays:[0,1,2,3,4,5,6], owner:"Laurent", category:"Santé", note:"Objectif 6 pauses/jour (ajuste selon ta journée).", createdAt:now},
+        {id:uid(), name:"Repas équilibré — midi", type:"check", target:1, schedule:"daily", weekdays:[0,1,2,3,4,5,6], owner:"Famille", category:"Nutrition", note:"Simple & propre.", createdAt:now},
+        {id:uid(), name:"Repas équilibré — soir", type:"check", target:1, schedule:"daily", weekdays:[0,1,2,3,4,5,6], owner:"Famille", category:"Nutrition", note:"", createdAt:now},
+        {id:uid(), name:"Rangement 15 min (zone)", type:"check", target:1, schedule:"daily", weekdays:[0,1,2,3,4,5,6], owner:"Famille", category:"Maison", note:"Une zone = une victoire.", createdAt:now},
+        {id:uid(), name:"Sport — samedi matin", type:"check", target:1, schedule:"weekly", weekdays:[6], owner:"Laurent", category:"Sport", note:"", createdAt:now},
+        {id:uid(), name:"Sport — dimanche matin", type:"check", target:1, schedule:"weekly", weekdays:[0], owner:"Laurent", category:"Sport", note:"", createdAt:now},
+      ],
+      history: {} // dateKey => { [taskId]: boolean|number }
+    };
+  }
+
+  let state = load();
+  if(!state){
+    state = defaultData();
+    save(state);
+  }
+
+  function applyPrefs(){
+    document.body.classList.toggle("reduceTransparency", !!state.prefs.reduceTransparency);
+    document.body.classList.toggle("reduceMotion", !!state.prefs.reduceMotion);
+  }
+
+  applyPrefs();
+
+  // Build weekday chips in modal
+  function renderWeekdayChips(selected){
+    weekdayChips.innerHTML = "";
+    WEEKDAYS.forEach(w => {
+      const chip = document.createElement("div");
+      chip.className = "chip" + (selected.includes(w.i) ? " on" : "");
+      chip.textContent = w.s;
+      chip.addEventListener("click", () => {
+        if(selected.includes(w.i)) selected = selected.filter(x => x !== w.i);
+        else selected.push(w.i);
+        renderWeekdayChips(selected);
+      });
+      weekdayChips.appendChild(chip);
+    });
+    return () => selected.slice().sort((a,b)=>a-b);
+  }
+
+  function dueToday(task, d=new Date()){
+    const dow = d.getDay(); // 0..6
+    if(task.schedule === "daily") return true;
+    if(task.schedule === "weekly") return (task.weekdays || []).includes(dow);
+    return true;
+  }
+
+  function getTodayRecord(){
+    const k = dateKey();
+    if(!state.history[k]) state.history[k] = {};
+    return state.history[k];
+  }
+
+  function valueFor(task, dKey=dateKey()){
+    const rec = state.history[dKey] || {};
+    return rec[task.id];
+  }
+
+  function setValue(task, val, dKey=dateKey()){
+    if(!state.history[dKey]) state.history[dKey] = {};
+    state.history[dKey][task.id] = val;
+    save(state);
+  }
+
+  function completed(task, dKey=dateKey()){
+    const v = valueFor(task, dKey);
+    if(task.type === "check") return v === true;
+    if(task.type === "counter") return (Number(v||0) >= Number(task.target||1));
+    return false;
+  }
+
+  function completionRatioForDate(dKey){
+    const d = new Date(dKey+"T00:00:00");
+    const due = state.tasks.filter(t => dueToday(t,d));
+    if(due.length === 0) return {done:0, total:0, pct:0};
+    let done = 0;
+    due.forEach(t => { if(completed(t, dKey)) done++; });
+    const pct = Math.round((done/due.length)*100);
+    return {done, total: due.length, pct};
+  }
+
+  function rangeKeys(daysBack){
+    const keys = [];
+    const base = startOfDay(new Date());
+    for(let i=daysBack-1;i>=0;i--){
+      keys.push(dateKey(addDays(base, -i)));
+    }
+    return keys;
+  }
+
+  function drawChart14(){
+    const ctx = chart14.getContext("2d");
+    const keys = rangeKeys(14);
+    const values = keys.map(k => completionRatioForDate(k).pct);
+
+    // HiDPI
+    const cssW = chart14.clientWidth;
+    const cssH = chart14.clientHeight;
+    const dpr = window.devicePixelRatio || 1;
+    chart14.width = Math.floor(cssW * dpr);
+    chart14.height = Math.floor(cssH * dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+
+    ctx.clearRect(0,0,cssW,cssH);
+
+    // grid
+    ctx.globalAlpha = 0.6;
+    ctx.strokeStyle = "rgba(255,255,255,0.12)";
+    for(let i=0;i<=4;i++){
+      const y = 18 + i*(cssH-36)/4;
+      ctx.beginPath(); ctx.moveTo(14,y); ctx.lineTo(cssW-14,y); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+
+    // line
+    const plotW = cssW - 28;
+    const plotH = cssH - 36;
+    const x0 = 14, y0 = 18;
+    const step = plotW/(values.length-1);
+
+    ctx.lineWidth = 2.5;
+    ctx.strokeStyle = "rgba(106,228,255,0.9)";
+    ctx.beginPath();
+    values.forEach((v, i) => {
+      const x = x0 + i*step;
+      const y = y0 + (100 - v) * (plotH/100);
+      if(i===0) ctx.moveTo(x,y);
+      else ctx.lineTo(x,y);
+    });
+    ctx.stroke();
+
+    // dots
+    ctx.fillStyle = "rgba(255,255,255,0.9)";
+    values.forEach((v,i)=>{
+      const x = x0 + i*step;
+      const y = y0 + (100 - v) * (plotH/100);
+      ctx.globalAlpha = 0.95;
+      ctx.beginPath(); ctx.arc(x,y,3.2,0,Math.PI*2); ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+
+    // label (last)
+    const last = values[values.length-1];
+    ctx.fillStyle = "rgba(255,255,255,0.85)";
+    ctx.font = "12px system-ui, -apple-system, SF Pro Text";
+    ctx.fillText(`${last}% aujourd’hui`, 16, cssH - 10);
+  }
+
+  function streakForTask(task){
+    let s = 0;
+    // look back up to 120 days
+    const base = startOfDay(new Date());
+    for(let i=0;i<120;i++){
+      const d = addDays(base, -i);
+      if(!dueToday(task, d)) continue;
+      const k = dateKey(d);
+      if(completed(task, k)) s++;
+      else break;
+    }
+    return s;
+  }
+
+  function renderToday(){
+    const d = new Date();
+    todayMeta.textContent = fmtLong(d);
+    const due = state.tasks.filter(t => dueToday(t,d));
+
+    // sort: category then name
+    due.sort((a,b)=> (a.category||"").localeCompare(b.category||"") || a.name.localeCompare(b.name));
+
+    todayTasksEl.innerHTML = "";
+    const dKey = dateKey(d);
+
+    due.forEach(task => {
+      const row = document.createElement("div");
+      row.className = "task";
+
+      const left = document.createElement("div");
+      left.className = "taskLeft";
+
+      // left control
+      let control;
+      if(task.type === "check"){
+        control = document.createElement("div");
+        control.className = "chk " + (valueFor(task,dKey)===true ? "on":"");
+        control.innerHTML = `
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M6.5 12.5l3 3 8-9" stroke="rgba(255,255,255,.92)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>`;
+        control.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const cur = valueFor(task,dKey)===true;
+          setValue(task, !cur, dKey);
+          renderAll();
+        });
+      }else{
+        control = document.createElement("div");
+        control.className = "chk " + (completed(task,dKey) ? "on":"");
+        control.innerHTML = `
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M6.5 12.5l3 3 8-9" stroke="rgba(255,255,255,.92)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>`;
+      }
+
+      const text = document.createElement("div");
+      const metaParts = [];
+      if(task.category) metaParts.push(task.category);
+      if(task.owner) metaParts.push("• " + task.owner);
+      if(task.type === "counter") metaParts.push("• objectif " + (task.target||1) + "/j");
+      if(task.schedule === "weekly") metaParts.push("• hebdo");
+      text.innerHTML = `
+        <div class="taskName">${escapeHtml(task.name)}</div>
+        <div class="taskMeta">${metaParts.join(" ") || "&nbsp;"}</div>
+      `;
+
+      left.appendChild(control);
+      left.appendChild(text);
+
+      row.appendChild(left);
+
+      if(task.type === "counter"){
+        const ctr = document.createElement("div");
+        ctr.className = "counter";
+
+        const minus = document.createElement("div");
+        minus.className = "btn";
+        minus.textContent = "–";
+
+        const plus = document.createElement("div");
+        plus.className = "btn";
+        plus.textContent = "+";
+
+        const val = Number(valueFor(task,dKey) || 0);
+        const badge = document.createElement("div");
+        badge.className = "countBadge " + (val >= (task.target||1) ? "ok":"");
+        badge.textContent = `${val}/${task.target||1}`;
+
+        minus.addEventListener("click", (e)=>{
+          e.stopPropagation();
+          const v = Math.max(0, Number(valueFor(task,dKey)||0) - 1);
+          setValue(task, v, dKey);
+          renderAll();
+        });
+        plus.addEventListener("click", (e)=>{
+          e.stopPropagation();
+          const v = Number(valueFor(task,dKey)||0) + 1;
+          setValue(task, v, dKey);
+          renderAll();
+        });
+
+        ctr.appendChild(minus);
+        ctr.appendChild(badge);
+        ctr.appendChild(plus);
+
+        row.appendChild(ctr);
+      }
+
+      row.addEventListener("click", () => openModal(task));
+      todayTasksEl.appendChild(row);
+    });
+
+    const r = completionRatioForDate(dKey);
+    kpiToday.textContent = `${r.pct}%`;
+    // last 7 days
+    const k7 = rangeKeys(7).map(k=>completionRatioForDate(k));
+    const avg7 = k7.length ? Math.round(k7.reduce((a,x)=>a+x.pct,0)/k7.length) : 0;
+    kpi7d.textContent = `${avg7}%`;
+    // last 30 days
+    const k30 = rangeKeys(30).map(k=>completionRatioForDate(k));
+    const avg30 = k30.length ? Math.round(k30.reduce((a,x)=>a+x.pct,0)/k30.length) : 0;
+    kpi30d.textContent = `${avg30}%`;
+
+    todayTip.textContent = (r.pct === 100)
+      ? "Parfait. Tu peux t’arrêter ici sans culpabilité."
+      : "Objectif : fais juste la prochaine action (la plus petite possible).";
+  }
+
+  function ownersList(){
+    const set = new Set(["Tous"]);
+    state.tasks.forEach(t => { if(t.owner && t.owner.trim()) set.add(t.owner.trim()); });
+    return [...set];
+  }
+
+  function renderOwnersFilter(){
+    const owners = ownersList();
+    const cur = ownerFilter.value || "Tous";
+    ownerFilter.innerHTML = "";
+    owners.forEach(o => {
+      const opt = document.createElement("option");
+      opt.value = o; opt.textContent = o;
+      if(o === cur) opt.selected = true;
+      ownerFilter.appendChild(opt);
+    });
+  }
+
+  function renderTasks(){
+    renderOwnersFilter();
+    const filterOwner = ownerFilter.value || "Tous";
+    const q = (searchTask.value || "").toLowerCase().trim();
+
+    let tasks = [...state.tasks];
+    if(filterOwner !== "Tous"){
+      tasks = tasks.filter(t => (t.owner||"").trim() === filterOwner);
+    }
+    if(q){
+      tasks = tasks.filter(t =>
+        (t.name||"").toLowerCase().includes(q) ||
+        (t.category||"").toLowerCase().includes(q) ||
+        (t.note||"").toLowerCase().includes(q)
+      );
+    }
+
+    tasks.sort((a,b)=> (a.category||"").localeCompare(b.category||"") || a.name.localeCompare(b.name));
+
+    taskCount.textContent = `${tasks.length} / ${state.tasks.length}`;
+    allTasksEl.innerHTML = "";
+
+    tasks.forEach(task => {
+      const row = document.createElement("div");
+      row.className = "task";
+      const left = document.createElement("div");
+      left.className = "taskLeft";
+
+      const badge = document.createElement("div");
+      badge.className = "chk " + (task.schedule==="weekly" ? "" : "");
+      badge.style.opacity = .9;
+      badge.innerHTML = `<span style="font-size:12px;color:rgba(255,255,255,.8)">${task.type==="counter"?"#":"✓"}</span>`;
+
+      const meta = [];
+      meta.push(task.schedule==="daily" ? "quotidienne" : "hebdo");
+      if(task.schedule==="weekly"){
+        meta.push("• " + (task.weekdays||[]).sort().map(i=>WEEKDAYS.find(w=>w.i===i).s).join(", "));
+      }
+      if(task.type==="counter") meta.push("• objectif " + (task.target||1) + "/j");
+      if(task.owner) meta.push("• " + task.owner);
+      if(task.category) meta.push("• " + task.category);
+
+      const text = document.createElement("div");
+      text.innerHTML = `
+        <div class="taskName">${escapeHtml(task.name)}</div>
+        <div class="taskMeta">${escapeHtml(meta.join(" "))}</div>
+      `;
+
+      left.appendChild(badge);
+      left.appendChild(text);
+
+      row.appendChild(left);
+      row.addEventListener("click", () => openModal(task));
+      allTasksEl.appendChild(row);
+    });
+  }
+
+  function renderStats(){
+    const now = new Date();
+    statsMeta.textContent = `Semaine ${isoWeekNumber(now)} • ${now.getFullYear()}`;
+
+    drawChart14();
+
+    // Top habits by streak
+    const dueDaily = state.tasks.filter(t => t.schedule === "daily");
+    const ranked = dueDaily
+      .map(t => ({t, s: streakForTask(t)}))
+      .sort((a,b)=>b.s-a.s)
+      .slice(0, 6);
+
+    topHabits.innerHTML = "";
+    ranked.forEach(({t,s})=>{
+      const row = document.createElement("div");
+      row.className = "task";
+      const left = document.createElement("div");
+      left.className = "taskLeft";
+      left.innerHTML = `
+        <div class="chk on" style="opacity:.85">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M6.5 12.5l3 3 8-9" stroke="rgba(255,255,255,.92)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div>
+          <div class="taskName">${escapeHtml(t.name)}</div>
+          <div class="taskMeta">${escapeHtml((t.category||"Habitude") + " • streak " + s + "j")}</div>
+        </div>
+      `;
+      row.appendChild(left);
+      row.addEventListener("click", ()=> openModal(t));
+      topHabits.appendChild(row);
+    });
+
+    // Summary month/week averages
+    const keys7 = rangeKeys(7);
+    const avg7 = Math.round(keys7.reduce((a,k)=>a+completionRatioForDate(k).pct,0)/keys7.length);
+
+    const keys30 = rangeKeys(30);
+    const avg30 = Math.round(keys30.reduce((a,k)=>a+completionRatioForDate(k).pct,0)/keys30.length);
+
+    const today = completionRatioForDate(dateKey());
+    summaryBox.innerHTML = `
+      <div style="font-size:15px;color:rgba(255,255,255,.9);margin-bottom:6px">
+        Aujourd’hui : <b>${today.pct}%</b> (${today.done}/${today.total})
+      </div>
+      <div>Sur 7 jours : <b>${avg7}%</b></div>
+      <div>Sur 30 jours : <b>${avg30}%</b></div>
+      <div class="divider"></div>
+      <div class="hint">
+        Idée “famille” : crée des tâches “Rangement (zone)” assignées à chacun (Responsable), puis filtre par responsable.
+      </div>
+    `;
+  }
+
+  function renderAll(){
+    renderToday();
+    renderTasks();
+    if(!VIEWS.stats.classList.contains("hidden")) renderStats();
+  }
+
+  function switchTab(tab){
+    // update view
+    Object.keys(VIEWS).forEach(k => VIEWS[k].classList.toggle("hidden", k !== tab));
+    $$(".tab").forEach(t => t.classList.toggle("active", t.dataset.tab === tab));
+
+    state.prefs.lastTab = tab;
+    save(state);
+
+    if(tab === "today"){
+      screenTitle.textContent = "Aujourd’hui";
+      screenSubtitle.textContent = "Coche, incrémente, et garde le cap — sans friction.";
+    }else if(tab === "stats"){
+      screenTitle.textContent = "Stats";
+      screenSubtitle.textContent = "Tu pilotes ton énergie : jour, semaine, mois.";
+      renderStats();
+    }else if(tab === "tasks"){
+      screenTitle.textContent = "Tâches";
+      screenSubtitle.textContent = "Structure tes routines (quotidien / hebdo).";
+    }else{
+      screenTitle.textContent = "Réglages";
+      screenSubtitle.textContent = "Lisibilité, données, sauvegarde.";
+    }
+
+    content.scrollTo({top:0, behavior: state.prefs.reduceMotion ? "auto" : "smooth"});
+  }
+
+  // Tab bar compact behavior on scroll
+  let lastY = 0;
+  content.addEventListener("scroll", ()=>{
+    const y = content.scrollTop;
+    const goingDown = y > lastY;
+    lastY = y;
+    if(y < 30){ tabbar.classList.remove("compact"); return; }
+    if(goingDown) tabbar.classList.add("compact");
+    else tabbar.classList.remove("compact");
+  }, {passive:true});
+
+  $$(".tab").forEach(t => t.addEventListener("click", ()=> switchTab(t.dataset.tab)));
+
+  // Modal logic
+  let editingTaskId = null;
+  let getSelectedWeekdays = null;
+
+  function openModal(task=null){
+    editingTaskId = task ? task.id : null;
+    modalTitle.textContent = task ? "Modifier la tâche" : "Nouvelle tâche";
+    deleteBtn.style.display = task ? "grid" : "none";
+
+    tName.value = task?.name || "";
+    tOwner.value = task?.owner || "";
+    tType.value = task?.type || "check";
+    tTarget.value = task?.target || 6;
+    tSchedule.value = task?.schedule || "daily";
+    tCategory.value = task?.category || "";
+    tNote.value = task?.note || "";
+
+    updateTypeUI();
+    updateScheduleUI(task?.weekdays || [1,2,3,4,5]);
+
+    modal.classList.add("show");
+  }
+
+  function closeSheet(){
+    modal.classList.remove("show");
+    editingTaskId = null;
+  }
+
+  function updateTypeUI(){
+    const isCounter = (tType.value === "counter");
+    targetWrap.classList.toggle("hidden", !isCounter);
+  }
+
+  function updateScheduleUI(weekdays){
+    const isWeekly = (tSchedule.value === "weekly");
+    weekdaysWrap.classList.toggle("hidden", !isWeekly);
+    getSelectedWeekdays = renderWeekdayChips((weekdays||[]).slice());
+  }
+
+  tType.addEventListener("change", updateTypeUI);
+  tSchedule.addEventListener("change", ()=> updateScheduleUI([1,2,3,4,5]));
+
+  closeModal.addEventListener("click", closeSheet);
+  cancelBtn.addEventListener("click", closeSheet);
+  modal.addEventListener("click", (e)=>{ if(e.target === modal) closeSheet(); });
+
+  saveBtn.addEventListener("click", ()=>{
+    const name = tName.value.trim();
+    if(!name){ alert("Nom requis."); return; }
+
+    const task = {
+      id: editingTaskId || uid(),
+      name,
+      owner: tOwner.value.trim(),
+      type: tType.value,
+      target: Math.max(1, Number(tTarget.value || 1)),
+      schedule: tSchedule.value,
+      weekdays: (tSchedule.value === "weekly") ? (getSelectedWeekdays ? getSelectedWeekdays() : [1,2,3,4,5]) : [0,1,2,3,4,5,6],
+      category: tCategory.value.trim(),
+      note: tNote.value.trim(),
+      createdAt: (editingTaskId ? (state.tasks.find(t=>t.id===editingTaskId)?.createdAt) : new Date().toISOString())
+    };
+
+    if(editingTaskId){
+      state.tasks = state.tasks.map(t => t.id === editingTaskId ? task : t);
+    }else{
+      state.tasks.push(task);
+    }
+    save(state);
+    closeSheet();
+    renderAll();
+  });
+
+  deleteBtn.addEventListener("click", ()=>{
+    if(!editingTaskId) return;
+    const ok = confirm("Supprimer cette tâche ?");
+    if(!ok) return;
+    // remove from tasks + history entries
+    state.tasks = state.tasks.filter(t => t.id !== editingTaskId);
+    Object.keys(state.history).forEach(k=>{
+      if(state.history[k] && state.history[k][editingTaskId] !== undefined){
+        delete state.history[k][editingTaskId];
+      }
+    });
+    save(state);
+    closeSheet();
+    renderAll();
+  });
+
+  quickAddBtn.addEventListener("click", ()=> openModal(null));
+
+  ownerFilter.addEventListener("change", renderTasks);
+  searchTask.addEventListener("input", renderTasks);
+
+  // Settings toggles
+  function updateToggleButtons(){
+    toggleTransparency.textContent = state.prefs.reduceTransparency ? "ON" : "OFF";
+    toggleMotion.textContent = state.prefs.reduceMotion ? "ON" : "OFF";
+    toggleTransparency.classList.toggle("primary", !!state.prefs.reduceTransparency);
+    toggleMotion.classList.toggle("primary", !!state.prefs.reduceMotion);
+  }
+  updateToggleButtons();
+
+  toggleTransparency.addEventListener("click", ()=>{
+    state.prefs.reduceTransparency = !state.prefs.reduceTransparency;
+    save(state);
+    applyPrefs();
+    updateToggleButtons();
+  });
+  toggleMotion.addEventListener("click", ()=>{
+    state.prefs.reduceMotion = !state.prefs.reduceMotion;
+    save(state);
+    applyPrefs();
+    updateToggleButtons();
+  });
+
+  exportBtn.addEventListener("click", ()=>{
+    const blob = new Blob([JSON.stringify(state, null, 2)], {type:"application/json"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `rituels-export-${dateKey()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  });
+
+  importFile.addEventListener("change", async (e)=>{
+    const file = e.target.files?.[0];
+    if(!file) return;
+    const text = await file.text();
+    try{
+      const obj = JSON.parse(text);
+      if(!obj || !obj.tasks || !obj.history){ throw new Error("Format invalide"); }
+      const ok = confirm("Importer et remplacer les données actuelles ?");
+      if(!ok) return;
+      state = obj;
+      save(state);
+      applyPrefs();
+      updateToggleButtons();
+      renderAll();
+      switchTab(state.prefs?.lastTab || "today");
+    }catch(err){
+      alert("Impossible d'importer : " + err.message);
+    }finally{
+      importFile.value = "";
+    }
+  });
+
+  resetBtn.addEventListener("click", ()=>{
+    const ok = confirm("Tout effacer ? (tâches + historique)");
+    if(!ok) return;
+    state = defaultData();
+    save(state);
+    applyPrefs();
+    updateToggleButtons();
+    renderAll();
+    switchTab("today");
+  });
+
+  function escapeHtml(s){
+    return (s ?? "").toString()
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#039;");
+  }
+
+  // Initial render
+  renderAll();
+  switchTab(state.prefs.lastTab || "today");
+
+  // Redraw chart on resize (stats view)
+  window.addEventListener("resize", ()=>{
+    if(!VIEWS.stats.classList.contains("hidden")){
+      drawChart14();
+    }
+  });
+})();
+</script>
+</body>
+</html>
